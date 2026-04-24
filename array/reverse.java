@@ -5,7 +5,6 @@ class reverse {
         System.out.println("enter limit");
         int n = s.nextInt();
         int a[] = new int [n];
-        int b[] = new int [n];
         System.out.println("enter " + n + "values");
         for( int i=0; i<n; i++) {
             a[i] = s.nextInt();
