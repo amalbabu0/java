@@ -9,9 +9,13 @@ class bubble_sort {
                     a[j+1] = temp;
                 }
             }
+            for(int c=0; c<a.length; c++) {
+                System.out.print(a[c]);
+            }
+            System.out.println();
         }
         for (int i = 0; i<a.length;i++) {
-            System.out.println(a[i]);
+            System.out.print(a[i]);
         }
     }
 }
