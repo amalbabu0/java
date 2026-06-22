@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwiftCart Checkout</title>
+  <style>
+    :root {
+      --ink: #18212f;
+      --muted: #667085;
+      --line: #dde3ea;
+      --surface: #ffffff;
+      --page: #f5f7fb;
+      --teal: #087f73;
+      --teal-dark: #06675d;
+      --coral: #e85d4f;
+      --amber: #f6b64b;
+      --blue: #3466d6;
+      --shadow: 0 18px 42px rgba(24, 33, 47, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(8, 127, 115, 0.08), transparent 34%),
+        linear-gradient(315deg, rgba(232, 93, 79, 0.09), transparent 30%),
+        var(--page);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 72px;
+      padding: 16px clamp(18px, 4vw, 56px);
+      border-bottom: 1px solid rgba(221, 227, 234, 0.85);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #ffffff;
+    }
+
+    .gateway-status {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      max-width: 52vw;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #ffffff;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 34px 0 54px;
+    }
+
+    .store-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 390px);
+      align-items: stretch;
+      gap: 22px;
+      margin-bottom: 24px;
+    }
+
+    .headline {
+      display: flex;
+      min-height: 210px;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(24px, 5vw, 46px);
+      border: 1px solid rgba(221, 227, 234, 0.9);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--teal);
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    h1 {
+      max-width: 670px;
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.2rem);
+      line-height: 1.02;
+    }
+
+    .subhead {
+      max-width: 620px;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .order-panel {
+      display: flex;
+      min-height: 210px;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 24px;
+      border: 1px solid rgba(221, 227, 234, 0.95);
+      border-radius: 8px;
+      background: var(--ink);
+      color: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-label {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .panel-title {
+      margin: 6px 0 0;
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      line-height: 1.14;
+    }
+
+    .panel-text {
+      margin: 10px 0 0;
+      color: rgba(255, 255, 255, 0.75);
+      line-height: 1.5;
+    }
+
+    .payment-id {
+      display: none;
+      overflow-wrap: anywhere;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.9rem;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .product-card {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 12px 30px rgba(24, 33, 47, 0.08);
+    }
+
+    .product-card img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      background: #dce3ed;
+    }
+
+    .product-body {
+      display: flex;
+      min-height: 255px;
+      flex: 1;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .product-body h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1.22;
+    }
+
+    .product-body p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: auto;
+    }
+
+    .price {
+      font-size: 1.22rem;
+      font-weight: 850;
+    }
+
+    .tag {
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: rgba(246, 182, 75, 0.18);
+      color: #8b5a00;
+      font-size: 0.8rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .buy-button {
+      display: inline-flex;
+      width: 100%;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 6px;
+      color: #ffffff;
+      background: var(--teal);
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .buy-button:hover {
+      background: var(--teal-dark);
+      box-shadow: 0 10px 22px rgba(8, 127, 115, 0.28);
+      transform: translateY(-1px);
+    }
+
+    .buy-button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 20;
+      width: min(380px, calc(100% - 36px));
+      padding: 14px 16px;
+      border: 1px solid rgba(221, 227, 234, 0.95);
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.error {
+      border-left-color: var(--coral);
+    }
+
+    .toast.success {
+      border-left-color: var(--teal);
+    }
+
+    @media (max-width: 980px) {
+      .store-head {
+        grid-template-columns: 1fr;
+      }
+
+      .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .gateway-status {
+        max-width: 100%;
+        white-space: normal;
+      }
+
+      main {
+        width: min(100% - 28px, 1180px);
+        padding-top: 22px;
+      }
+
+      .headline,
+      .order-panel {
+        min-height: auto;
+        padding: 20px;
+      }
+
+      .products-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .product-body {
+        min-height: 230px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" aria-label="SwiftCart">
+      <span class="brand-mark">S</span>
+      <span>SwiftCart</span>
+    </div>
+    <div class="gateway-status" id="gatewayStatus">Checking Razorpay</div>
+  </header>
+
+  <main>
+    <section class="store-head" aria-label="Store checkout">
+      <div class="headline">
+        <p class="eyebrow">No login checkout</p>
+        <h1>Pick a product and pay with Razorpay.</h1>
+        <p class="subhead">Four quick-buy products with Razorpay Checkout. Once payment is verified, the order is placed instantly.</p>
+      </div>
+
+      <aside class="order-panel" aria-live="polite" aria-label="Order status">
+        <div>
+          <p class="panel-label" id="panelLabel">Order status</p>
+          <h2 class="panel-title" id="panelTitle">Ready for checkout</h2>
+          <p class="panel-text" id="panelText">Select any item and complete payment in the Razorpay gateway.</p>
+        </div>
+        <p class="payment-id" id="paymentId"></p>
+      </aside>
+    </section>
+
+    <section class="products-grid" id="productsGrid" aria-label="Products"></section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    const fallbackProducts = [
+      {
+        id: "pulse-headphones",
+        name: "Pulse Wireless Headphones",
+        description: "Noise-softening over-ear audio with 40 hours of battery.",
+        pricePaise: 100,
+        badge: "Audio",
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80",
+        alt: "Black wireless headphones on a bright background"
+      },
+      {
+        id: "loop-smartwatch",
+        name: "Loop Smart Watch",
+        description: "Lightweight fitness tracking with calls, steps and sleep insights.",
+        pricePaise: 200,
+        badge: "Wearable",
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80",
+        alt: "Smart watch with a clean strap on a tabletop"
+      },
+      {
+        id: "city-backpack",
+        name: "City Day Backpack",
+        description: "Water-resistant daily bag with a padded laptop section.",
+        pricePaise: 100,
+        badge: "Travel",
+        image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=80",
+        alt: "Brown backpack photographed in natural light"
+      },
+      {
+        id: "nova-sneakers",
+        name: "Nova Run Sneakers",
+        description: "Cushioned everyday sneakers with breathable knit support.",
+        pricePaise: 200,
+        badge: "Footwear",
+        image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80",
+        alt: "Red running shoes floating above a red surface"
+      }
+    ];
+
+    const currencyFormatter = new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0
+    });
+
+    const productsGrid = document.getElementById("productsGrid");
+    const gatewayStatus = document.getElementById("gatewayStatus");
+    const panelLabel = document.getElementById("panelLabel");
+    const panelTitle = document.getElementById("panelTitle");
+    const panelText = document.getElementById("panelText");
+    const paymentId = document.getElementById("paymentId");
+    const toast = document.getElementById("toast");
+
+    let products = fallbackProducts;
+    let busyProductId = "";
+    let razorpayKeyId = "";
+    let checkoutCurrency = "INR";
+    let toastTimer = 0;
+
+    function formatPrice(pricePaise) {
+      return currencyFormatter.format(pricePaise / 100);
+    }
+
+    function renderProducts() {
+      productsGrid.innerHTML = products.map((product) => `
+        <article class="product-card">
+          <img src="${product.image}" alt="${product.alt}" loading="lazy">
+          <div class="product-body">
+            <div>
+              <h2>${product.name}</h2>
+              <p>${product.description}</p>
+            </div>
+            <div class="price-row">
+              <span class="price">${formatPrice(product.pricePaise)}</span>
+              <span class="tag">${product.badge}</span>
+            </div>
+            <button class="buy-button" data-product-id="${product.id}" ${busyProductId === product.id ? "disabled" : ""}>
+              ${busyProductId === product.id ? "Opening..." : "Buy Now"}
+            </button>
+          </div>
+        </article>
+      `).join("");
+
+      document.querySelectorAll(".buy-button").forEach((button) => {
+        button.addEventListener("click", () => startCheckout(button.dataset.productId));
+      });
+    }
+
+    function setBusy(productId) {
+      busyProductId = productId;
+      renderProducts();
+    }
+
+    function setPanel(label, title, text, paymentText = "") {
+      panelLabel.textContent = label;
+      panelTitle.textContent = title;
+      panelText.textContent = text;
+      paymentId.style.display = paymentText ? "block" : "none";
+      paymentId.textContent = paymentText;
+    }
+
+    function showToast(message, type = "") {
+      clearTimeout(toastTimer);
+      toast.className = `toast show ${type}`;
+      toast.textContent = message;
+      toastTimer = setTimeout(() => {
+        toast.className = "toast";
+      }, 5200);
+    }
+
+    function applyConfig(config) {
+      razorpayKeyId = config.keyId || "";
+      checkoutCurrency = config.currency || "INR";
+      gatewayStatus.textContent = config.keyConfigured ? "Razorpay ready" : "Add Razorpay keys";
+    }
+
+    async function ensureCheckoutConfig() {
+      if (razorpayKeyId) {
+        return;
+      }
+
+      const response = await fetch("/api/config");
+      const config = await response.json().catch(() => ({}));
+
+      if (!response.ok || !config.keyConfigured || !config.keyId) {
+        throw new Error("Razorpay keys are not configured on the server.");
+      }
+
+      applyConfig(config);
+    }
+
+    async function loadStoreState() {
+      try {
+        const [configResponse, productsResponse] = await Promise.all([
+          fetch("/api/config"),
+          fetch("/api/products")
+        ]);
+
+        if (configResponse.ok) {
+          const config = await configResponse.json();
+          applyConfig(config);
+        } else {
+          gatewayStatus.textContent = "Server not ready";
+        }
+
+        if (productsResponse.ok) {
+          const data = await productsResponse.json();
+          products = data.products;
+          renderProducts();
+        }
+      } catch (error) {
+        gatewayStatus.textContent = location.protocol === "file:" ? "Run node server.js" : "Server not reachable";
+      }
+    }
+
+    function loadRazorpayScript() {
+      if (window.Razorpay) {
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Could not load Razorpay Checkout."));
+        document.body.appendChild(script);
+      });
+    }
+
+    async function requestJson(url, body) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || "Payment server request failed.");
+      }
+      return data;
+    }
+
+    async function startCheckout(productId) {
+      const product = products.find((item) => item.id === productId);
+      if (!product) {
+        showToast("Product not found.", "error");
+        return;
+      }
+
+      setBusy(product.id);
+      setPanel("Creating order", product.name, "Preparing a secure Razorpay order.");
+
+      try {
+        await ensureCheckoutConfig();
+        await loadRazorpayScript();
+        const order = await requestJson("/api/create-order", {
+          productId: product.id,
+          amount: product.pricePaise,
+          currency: checkoutCurrency,
+          receipt: `rcpt_${product.id}_${Date.now()}`
+        });
+
+        const razorpay = new Razorpay({
+          key: razorpayKeyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: "SwiftCart",
+          description: product.name,
+          order_id: order.order_id,
+          method: "upi",
+          prefill: {
+            name: "Test Customer",
+            email: "test.customer@example.com",
+            contact: "+919999999999"
+          },
+          notes: {
+            product_id: product.id,
+            product_name: product.name
+          },
+          theme: {
+            color: "#087f73"
+          },
+          modal: {
+            ondismiss: () => {
+              setBusy("");
+              setPanel("Checkout closed", "Payment not completed", `${product.name} is still available whenever you are ready.`);
+            }
+          },
+          handler: (response) => placeOrder(product, response)
+        });
+
+        razorpay.on("payment.failed", (response) => {
+          const message = response.error && response.error.description
+            ? response.error.description
+            : "Payment failed. Please try again.";
+          setBusy("");
+          setPanel("Payment failed", product.name, message);
+          showToast(message, "error");
+        });
+
+        setPanel("Payment gateway", product.name, "Complete the payment in Razorpay Checkout.");
+        razorpay.open();
+      } catch (error) {
+        setBusy("");
+        setPanel("Checkout unavailable", product.name, error.message);
+        showToast(error.message, "error");
+      }
+    }
+
+    async function placeOrder(product, paymentResponse) {
+      setPanel("Verifying payment", product.name, "Confirming payment signature before placing the order.");
+
+      try {
+        const result = await requestJson("/api/verify-payment", {
+          productId: product.id,
+          razorpay_order_id: paymentResponse.razorpay_order_id,
+          razorpay_payment_id: paymentResponse.razorpay_payment_id,
+          razorpay_signature: paymentResponse.razorpay_signature
+        });
+
+        setBusy("");
+        setPanel(
+          "Payment successful",
+          "Order placed",
+          `${product.name} is confirmed. Order number ${result.orderNumber}.`,
+          `Payment ID: ${result.paymentId}`
+        );
+        showToast("Payment verified. Order placed.", "success");
+      } catch (error) {
+        setBusy("");
+        setPanel("Verification failed", product.name, error.message);
+        showToast(error.message, "error");
+      }
+    }
+
+    renderProducts();
+    loadStoreState();
+  </script>
+</body>
+</html>
